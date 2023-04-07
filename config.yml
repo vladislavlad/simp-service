@@ -1,0 +1,8 @@
+server:
+  port: 8060
+database:
+  host: 127.0.0.1
+  port: 5432
+  user: munes
+  pass: munes
+  db: munes
