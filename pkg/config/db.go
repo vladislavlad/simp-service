@@ -1,20 +1,23 @@
 package config
 
 import (
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"log"
 	"simp-service/pkg/model"
 )
 
 func ConnectDB(cfg Config) *gorm.DB {
-	db, err := gorm.Open("postgres",
-		"host="+cfg.Database.Host+" "+
-			"port="+cfg.Database.Port+" "+
-			"user="+cfg.Database.Username+" "+
-			"password="+cfg.Database.Password+" "+
-			"dbname="+cfg.Database.Db+" "+
-			"sslmode=disable",
+	db, err := gorm.Open(
+		postgres.Open(
+			"host="+cfg.Database.Host+" "+
+				"port="+cfg.Database.Port+" "+
+				"user="+cfg.Database.Username+" "+
+				"password="+cfg.Database.Password+" "+
+				"dbname="+cfg.Database.Db+" "+
+				"sslmode=disable",
+		),
+		&gorm.Config{},
 	)
 	if err != nil {
 		log.Print(err)
