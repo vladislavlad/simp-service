@@ -21,10 +21,14 @@ func ConnectDB(cfg Config) *gorm.DB {
 	)
 	if err != nil {
 		log.Print(err)
-		panic("Failed to connect to ConnectDB")
+		panic("Failed to connect to DB")
 	}
 
-	db.AutoMigrate(&model.Comment{})
+	err = db.AutoMigrate(&model.Comment{})
+	if err != nil {
+		log.Print(err)
+		panic("Failed to migrate DB")
+	}
 
 	return db
 }

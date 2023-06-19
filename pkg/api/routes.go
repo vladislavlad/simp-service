@@ -15,6 +15,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 	ginEngine.GET("/comments", handler.CommentList)
 	ginEngine.POST("/comments", handler.CommentCreate)
+	ginEngine.PUT("/comments/:id", handler.UpdateCreate)
 
 	return ginEngine
 }

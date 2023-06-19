@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"runtime"
 	"simp-service/pkg/model"
+	"strconv"
 )
 
 type Handler struct {
@@ -49,4 +50,29 @@ func (h Handler) CommentCreate(c *gin.Context) {
 
 	h.DB.Save(&comment)
 	c.Status(http.StatusCreated)
+}
+
+func (h Handler) UpdateCreate(c *gin.Context) {
+	var comment model.Comment
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot parse 'id' param"})
+		return
+	}
+
+	h.DB.First(&comment, id)
+	var commentUpdate CommentUpdate
+
+	err = c.BindJSON(&commentUpdate)
+	if err != nil {
+		// add common error
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot process JSON object"})
+		return
+	}
+
+	comment.Comment = commentUpdate.Comment
+	h.DB.Save(&comment)
+
+	c.JSON(http.StatusOK, comment)
 }
