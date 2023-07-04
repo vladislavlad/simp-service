@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"simp-service/pkg/model"
 	"strconv"
+	"sync"
 )
 
 type Handler struct {
@@ -32,9 +33,13 @@ func (h Handler) Hello(c *gin.Context) {
 }
 
 func (h Handler) CommentList(c *gin.Context) {
+	var wg sync.WaitGroup
 	var comments []model.Comment
-	h.DB.Find(&comments)
 
+	wg.Add(1)
+	go dbFind(&wg, h, &comments)()
+
+	wg.Wait()
 	c.JSON(http.StatusOK, gin.H{"comments": comments})
 }
 
@@ -75,4 +80,11 @@ func (h Handler) UpdateCreate(c *gin.Context) {
 	h.DB.Save(&comment)
 
 	c.JSON(http.StatusOK, comment)
+}
+
+func dbFind(wg *sync.WaitGroup, h Handler, comments *[]model.Comment) func() {
+	return func() {
+		defer wg.Done()
+		h.DB.Find(&comments)
+	}
 }
