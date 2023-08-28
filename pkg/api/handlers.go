@@ -14,6 +14,13 @@ type Handler struct {
 	DB *gorm.DB
 }
 
+func (h Handler) dbFind(wg *sync.WaitGroup, comments *[]model.Comment) func() {
+	return func() {
+		defer wg.Done()
+		h.DB.Find(&comments)
+	}
+}
+
 func (h Handler) GetOs(c *gin.Context) {
 	c.JSON(
 		http.StatusOK,
@@ -37,7 +44,7 @@ func (h Handler) CommentList(c *gin.Context) {
 	var comments []model.Comment
 
 	wg.Add(1)
-	go dbFind(&wg, h, &comments)()
+	go h.dbFind(&wg, &comments)()
 
 	wg.Wait()
 	c.JSON(http.StatusOK, gin.H{"comments": comments})
@@ -80,11 +87,4 @@ func (h Handler) UpdateCreate(c *gin.Context) {
 	h.DB.Save(&comment)
 
 	c.JSON(http.StatusOK, comment)
-}
-
-func dbFind(wg *sync.WaitGroup, h Handler, comments *[]model.Comment) func() {
-	return func() {
-		defer wg.Done()
-		h.DB.Find(&comments)
-	}
 }
