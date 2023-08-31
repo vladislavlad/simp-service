@@ -1,5 +1,5 @@
 package api
 
 type CommentUpdate struct {
-	Comment string `json:"comment"`
+	Text string `json:"text"`
 }

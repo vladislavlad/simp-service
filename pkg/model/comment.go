@@ -2,7 +2,7 @@ package model
 
 type Comment struct {
 	ID       uint   `json:"id" gorm:"primary_key"`
-	Comment  string `json:"comment"`
+	Text     string `json:"text"`
 	Author   string `json:"author"`
 	Target   string `json:"target"`
 	TargetId uint   `json:"targetId"`

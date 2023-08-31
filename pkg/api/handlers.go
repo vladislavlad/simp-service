@@ -83,7 +83,7 @@ func (h Handler) UpdateCreate(c *gin.Context) {
 		return
 	}
 
-	comment.Comment = commentUpdate.Comment
+	comment.Text = commentUpdate.Text
 	h.DB.Save(&comment)
 
 	c.JSON(http.StatusOK, comment)
