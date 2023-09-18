@@ -53,10 +53,9 @@ func (h Handler) CommentList(c *gin.Context) {
 func (h Handler) CommentCreate(c *gin.Context) {
 	var comment model.Comment
 
-	err := c.BindJSON(&comment)
+	err := c.ShouldBindJSON(&comment)
 	if err != nil {
-		// add common error
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot process JSON object"})
+		c.JSON(http.StatusBadRequest, model.MakeError("Cannot process JSON object"))
 		return
 	}
 
@@ -69,17 +68,16 @@ func (h Handler) UpdateCreate(c *gin.Context) {
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot parse 'id' param"})
+		c.JSON(http.StatusBadRequest, model.MakeError("Cannot parse 'id' param"))
 		return
 	}
 
 	h.DB.First(&comment, id)
 	var commentUpdate CommentUpdate
 
-	err = c.BindJSON(&commentUpdate)
+	err = c.ShouldBindJSON(&commentUpdate)
 	if err != nil {
-		// add common error
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot process JSON object"})
+		c.JSON(http.StatusBadRequest, model.MakeError("Cannot process JSON object"))
 		return
 	}
 
