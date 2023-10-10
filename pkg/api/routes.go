@@ -14,8 +14,10 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	ginEngine.GET("/os", handler.GetOs)
 
 	ginEngine.GET("/comments", handler.CommentList)
+	ginEngine.GET("/comments/:id", handler.CommentGet)
 	ginEngine.POST("/comments", handler.CommentCreate)
-	ginEngine.PUT("/comments/:id", handler.UpdateCreate)
+	ginEngine.PUT("/comments/:id", handler.CommentUpdate)
+	ginEngine.DELETE("/comments/:id", handler.CommentDelete)
 
 	return ginEngine
 }

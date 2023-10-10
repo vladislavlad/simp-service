@@ -8,16 +8,24 @@ import (
 	"simp-service/pkg/model"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type Handler struct {
 	DB *gorm.DB
 }
 
-func (h Handler) dbFind(wg *sync.WaitGroup, comments *[]model.Comment) func() {
+func (h Handler) dbFindList(wg *sync.WaitGroup, comments *[]model.Comment) func() {
 	return func() {
 		defer wg.Done()
 		h.DB.Find(&comments)
+	}
+}
+
+func (h Handler) dbFindById(wg *sync.WaitGroup, comment *model.Comment, id uint64) func() {
+	return func() {
+		defer wg.Done()
+		h.DB.First(&comment, id)
 	}
 }
 
@@ -44,10 +52,27 @@ func (h Handler) CommentList(c *gin.Context) {
 	var comments []model.Comment
 
 	wg.Add(1)
-	go h.dbFind(&wg, &comments)()
+	go h.dbFindList(&wg, &comments)()
 
 	wg.Wait()
 	c.JSON(http.StatusOK, gin.H{"comments": comments})
+}
+
+func (h Handler) CommentGet(c *gin.Context) {
+	var wg sync.WaitGroup
+	var comment model.Comment
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.MakeError("Cannot parse 'id' param"))
+		return
+	}
+
+	wg.Add(1)
+	go h.dbFindById(&wg, &comment, id)()
+
+	wg.Wait()
+	c.JSON(http.StatusOK, comment)
 }
 
 func (h Handler) CommentCreate(c *gin.Context) {
@@ -59,11 +84,15 @@ func (h Handler) CommentCreate(c *gin.Context) {
 		return
 	}
 
+	now := time.Now()
+	comment.CreatedAt = now
+	comment.UpdatedAt = now
 	h.DB.Save(&comment)
 	c.Status(http.StatusCreated)
 }
 
-func (h Handler) UpdateCreate(c *gin.Context) {
+func (h Handler) CommentUpdate(c *gin.Context) {
+	var wg sync.WaitGroup
 	var comment model.Comment
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -72,9 +101,11 @@ func (h Handler) UpdateCreate(c *gin.Context) {
 		return
 	}
 
-	h.DB.First(&comment, id)
-	var commentUpdate CommentUpdate
+	wg.Add(1)
+	go h.dbFindById(&wg, &comment, id)()
+	wg.Wait()
 
+	var commentUpdate CommentUpdate
 	err = c.ShouldBindJSON(&commentUpdate)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, model.MakeError("Cannot process JSON object"))
@@ -82,7 +113,28 @@ func (h Handler) UpdateCreate(c *gin.Context) {
 	}
 
 	comment.Text = commentUpdate.Text
+	comment.UpdatedAt = time.Now()
 	h.DB.Save(&comment)
 
 	c.JSON(http.StatusOK, comment)
+}
+
+func (h Handler) CommentDelete(c *gin.Context) {
+	var wg sync.WaitGroup
+	var comment model.Comment
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.MakeError("Cannot parse 'id' param"))
+		return
+	}
+
+	wg.Add(1)
+	go h.dbFindById(&wg, &comment, id)()
+	wg.Wait()
+
+	comment.DeletedAt = time.Now()
+	h.DB.Save(&comment)
+
+	c.Status(http.StatusNoContent)
 }
