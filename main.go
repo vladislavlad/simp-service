@@ -8,9 +8,10 @@ import (
 
 func main() {
 	props := config.Properties()
-	db := config.ConnectDB(props)
 
-	router := api.SetupRouter(db)
+	db := config.ConnectDB(props)
+	handler := api.Handler{DB: db}
+	router := api.SetupRouter(&handler)
 
 	err := router.Run(":" + props.Server.Port)
 	if err != nil {

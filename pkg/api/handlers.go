@@ -87,6 +87,7 @@ func (h Handler) CommentCreate(c *gin.Context) {
 	now := time.Now()
 	comment.CreatedAt = now
 	comment.UpdatedAt = now
+	comment.DeletedAt = nil
 	h.DB.Save(&comment)
 	c.Status(http.StatusCreated)
 }
@@ -133,7 +134,8 @@ func (h Handler) CommentDelete(c *gin.Context) {
 	go h.dbFindById(&wg, &comment, id)()
 	wg.Wait()
 
-	comment.DeletedAt = time.Now()
+	now := time.Now()
+	comment.DeletedAt = &now
 	h.DB.Save(&comment)
 
 	c.Status(http.StatusNoContent)
