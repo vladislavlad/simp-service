@@ -2,31 +2,17 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/vladislavlad/goroutines"
 	"gorm.io/gorm"
 	"net/http"
 	"runtime"
 	"simp-service/pkg/model"
 	"strconv"
-	"sync"
 	"time"
 )
 
 type Handler struct {
 	DB *gorm.DB
-}
-
-func (h Handler) dbFindList(wg *sync.WaitGroup, comments *[]model.Comment) func() {
-	return func() {
-		defer wg.Done()
-		h.DB.Find(&comments)
-	}
-}
-
-func (h Handler) dbFindById(wg *sync.WaitGroup, comment *model.Comment, id uint64) func() {
-	return func() {
-		defer wg.Done()
-		h.DB.First(&comment, id)
-	}
 }
 
 func (h Handler) GetOs(c *gin.Context) {
@@ -48,18 +34,16 @@ func (h Handler) Hello(c *gin.Context) {
 }
 
 func (h Handler) CommentList(c *gin.Context) {
-	var wg sync.WaitGroup
 	var comments []model.Comment
 
-	wg.Add(1)
-	go h.dbFindList(&wg, &comments)()
+	goroutines.Launch(
+		func() { h.DB.Find(&comments) },
+	)
 
-	wg.Wait()
 	c.JSON(http.StatusOK, gin.H{"comments": comments})
 }
 
 func (h Handler) CommentGet(c *gin.Context) {
-	var wg sync.WaitGroup
 	var comment model.Comment
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -68,10 +52,10 @@ func (h Handler) CommentGet(c *gin.Context) {
 		return
 	}
 
-	wg.Add(1)
-	go h.dbFindById(&wg, &comment, id)()
+	goroutines.Launch(
+		func() { h.DB.First(&comment, id) },
+	)
 
-	wg.Wait()
 	c.JSON(http.StatusOK, comment)
 }
 
@@ -93,7 +77,6 @@ func (h Handler) CommentCreate(c *gin.Context) {
 }
 
 func (h Handler) CommentUpdate(c *gin.Context) {
-	var wg sync.WaitGroup
 	var comment model.Comment
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -102,9 +85,9 @@ func (h Handler) CommentUpdate(c *gin.Context) {
 		return
 	}
 
-	wg.Add(1)
-	go h.dbFindById(&wg, &comment, id)()
-	wg.Wait()
+	goroutines.Launch(
+		func() { h.DB.First(&comment, id) },
+	)
 
 	var commentUpdate CommentUpdate
 	err = c.ShouldBindJSON(&commentUpdate)
@@ -121,7 +104,6 @@ func (h Handler) CommentUpdate(c *gin.Context) {
 }
 
 func (h Handler) CommentDelete(c *gin.Context) {
-	var wg sync.WaitGroup
 	var comment model.Comment
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -130,9 +112,9 @@ func (h Handler) CommentDelete(c *gin.Context) {
 		return
 	}
 
-	wg.Add(1)
-	go h.dbFindById(&wg, &comment, id)()
-	wg.Wait()
+	goroutines.Launch(
+		func() { h.DB.First(&comment, id) },
+	)
 
 	now := time.Now()
 	comment.DeletedAt = &now
